@@ -21,6 +21,9 @@ public:
     void paintGL();
 
     void readTestData(const char *filename);
+    void flipTriangles();
+
+    bool isNeighbouring(vec3i a, vec3i b);
 
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);

@@ -20,6 +20,8 @@ void RenderWidget::initializeGL()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
+    flipTriangles();
+
     glGenVertexArrays(1, &vao_id);
     glBindVertexArray(vao_id);
 
@@ -36,9 +38,6 @@ void RenderWidget::initializeGL()
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-    delete[] t_v;
-    delete[] t_n;
 }
 
 void RenderWidget::resizeGL(int w, int h)
@@ -93,6 +92,37 @@ void RenderWidget::readTestData(const char *filename)
     fread(t_v, sizeof(vec3), pointsN, f);
     fread(t_n, sizeof(vec3i), meshN, f);
     fclose(f);
+}
+
+void RenderWidget::flipTriangles()
+{
+    for(int mesh = 0; mesh < meshN - 1; mesh++)
+    {
+        if(isNeighbouring(t_n[mesh], t_n[mesh + 1]))
+        {
+            qDebug() << "Begin neighbours...";
+            qDebug() << t_n[mesh][0] << t_n[mesh][1] << t_n[mesh][2];
+            qDebug() << t_n[mesh + 1][0] << t_n[mesh + 1][1] << t_n[mesh + 1][2];
+            qDebug() << "End neighbours...";
+        }
+    }
+}
+
+bool RenderWidget::isNeighbouring(vec3i a, vec3i b)
+{
+    int ind = 0;
+    if(a[0] == b[0] || a[0] == b[1] || a[0] == b[2]) {
+        ind++;
+    }
+    if(a[1] == b[0] || a[1] == b[1] || a[1] == b[2]) {
+        ind++;
+    }
+    if(a[2] == b[0] || a[2] == b[1] || a[2] == b[2]) {
+        ind++;
+    }
+    if(ind == 2)
+        return true;
+    return false;
 }
 
 void RenderWidget::mouseMoveEvent(QMouseEvent *event)
