@@ -23,7 +23,11 @@ public:
     void readTestData(const char *filename);
     void flipTriangles();
 
-    bool isNeighbouring(vec3i a, vec3i b);
+    int getNeighbourTrianglePoint(vec3i a, vec3i b);
+    bool isNeighbouringByEdge(vec3i a, vec3i b, vec4i &res, vec2i &edge, vec2i &reverse);
+    bool isNeighbouringByVertex(vec3i a, vec3i b);
+    bool checkCorrectQuad(vec4i q);
+    void flip(vec3i t1, vec3i t2, vec4i quad, vec2i edge, vec2i reverse_edge, vec3i &r1, vec3i &r2);
 
     void mouseMoveEvent(QMouseEvent *event);
     void mousePressEvent(QMouseEvent *event);

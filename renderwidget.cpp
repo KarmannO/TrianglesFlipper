@@ -96,19 +96,114 @@ void RenderWidget::readTestData(const char *filename)
 
 void RenderWidget::flipTriangles()
 {
-    for(int mesh = 0; mesh < meshN - 1; mesh++)
-    {
-        if(isNeighbouring(t_n[mesh], t_n[mesh + 1]))
+    for(int iter = 0; iter < 5; iter++) {
+        int numt = 0;
+        for(int mesh = 0; mesh < meshN - 1; mesh++)
         {
-            qDebug() << "Begin neighbours...";
-            qDebug() << t_n[mesh][0] << t_n[mesh][1] << t_n[mesh][2];
-            qDebug() << t_n[mesh + 1][0] << t_n[mesh + 1][1] << t_n[mesh + 1][2];
-            qDebug() << "End neighbours...";
+            vec4i res = {-1, -1, -1, -1};
+            vec2i edge = {0, 0};
+            vec2i reverse = {0, 0};
+            if(isNeighbouringByEdge(t_n[mesh], t_n[mesh+1], res, edge, reverse)) {
+                if(checkCorrectQuad(res)) {
+                    vec3 p0, p1, p2, p3;
+                    memcpy(p0, t_v[res[3]], sizeof(vec3));
+                    memcpy(p1, t_v[res[0]], sizeof(vec3));
+                    memcpy(p2, t_v[res[1]], sizeof(vec3));
+                    memcpy(p3, t_v[res[2]], sizeof(vec3));
+
+
+                    if(val < 0.01) {
+                        vec3i nt_1 = {
+                            reverse[0],
+                            reverse[1],
+                            edge[0],
+                        };
+                        vec3i nt_2 = {
+                            edge[1],
+                            reverse[0],
+                            reverse[1]
+                        };
+                        numt++;
+                        memcpy(t_n[mesh], nt_1, sizeof(vec3i));
+                        memcpy(t_n[mesh+1], nt_2, sizeof(vec3i));
+                    }
+                }
+                else
+                {
+                    qDebug() << "Error";
+                    //qDebug() << t_n[mesh][0] << t_n[mesh][1] << t_n[mesh][2];
+                    //qDebug() << t_n[mesh+1][0] << t_n[mesh+1][1] << t_n[mesh+1][2];
+                    //qDebug() << "Res: " << res[0] << res[1] << res[2] << res[3];
+                    //qDebug() << "===============================================";
+                }
+            }
         }
+        qDebug() << numt << " triangles flipped";
     }
 }
 
-bool RenderWidget::isNeighbouring(vec3i a, vec3i b)
+int RenderWidget::getNeighbourTrianglePoint(vec3i a, vec3i b)
+{
+    if(b[0] != a[0] && b[0] != a[1] && b[0] != a[2])
+        return b[0];
+    if(b[1] != a[0] && b[1] != a[1] && b[1] != a[2])
+        return b[1];
+    if(b[2] != a[0] && b[2] != a[1] && b[2] != a[2])
+        return b[2];
+    return -1;
+}
+
+bool RenderWidget::isNeighbouringByEdge(vec3i a, vec3i b, vec4i &res, vec2i &edge, vec2i &reverse)
+{
+    int ind = 0;
+    if(a[0] == b[0] || a[0] == b[1] || a[0] == b[2]) {
+        res[0] = a[0];
+        ind++;
+    }
+    if(a[1] == b[0] || a[1] == b[1] || a[1] == b[2]) {
+        ind++;
+        res[1] = a[1];
+    }
+    if(a[2] == b[0] || a[2] == b[1] || a[2] == b[2]) {
+        ind++;
+        res[2] = a[2];
+    }
+    if(res[0] == -1 && res[3] == -1) {
+        if(a[1] == b[1] && a[2] == b[0]) { res[0] = a[0]; res[3] = b[2]; }
+        if(a[1] == b[0] && a[2] == b[2]) { res[0] = a[0]; res[3] = b[1]; }
+        if(a[1] == b[2] && a[2] == b[1]) { res[0] = a[0]; res[3] = b[0]; }
+        if(a[1] == b[2] && a[2] == b[0]) { res[0] = a[0]; res[3] = b[1]; }
+        if(a[1] == b[0] && a[2] == b[1]) { res[0] = a[0]; res[3] = b[2]; }
+        if(a[1] == b[1] && a[2] == b[2]) { res[0] = a[0]; res[3] = b[0]; }
+        edge[0] = res[1]; edge[1] = res[2];
+        reverse[0] = res[0]; reverse[1] = res[3];
+    }
+    if(res[2] == -1 && res[3] == -1) {
+        if(a[0] == b[2] && a[1] == b[1]) { res[2] = a[2]; res[3] = b[0]; }
+        if(a[0] == b[0] && a[1] == b[2]) { res[2] = a[2]; res[3] = b[1]; }
+        if(a[0] == b[1] && a[1] == b[0]) { res[2] = a[2]; res[3] = b[2]; }
+        if(a[0] == b[0] && a[1] == b[1]) { res[2] = a[2]; res[3] = b[2]; }
+        if(a[0] == b[2] && a[1] == b[0]) { res[2] = a[2]; res[3] = b[1]; }
+        if(a[0] == b[1] && a[1] == b[2]) { res[2] = a[2]; res[3] = b[0]; }
+        edge[0] = res[0]; edge[1] = res[1];
+        reverse[0] = res[2]; reverse[1] = res[3];
+    }
+    if(res[1] == -1 && res[3] == -1) {
+        if(a[0] == b[1] && a[2] == b[2]) { res[1] = a[1]; res[3] = b[0]; }
+        if(a[0] == b[0] && a[2] == b[1]) { res[1] = a[1]; res[3] = b[2]; }
+        if(a[0] == b[2] && a[2] == b[0]) { res[1] = a[1]; res[3] = b[1]; }
+        if(a[0] == b[0] && a[2] == b[2]) { res[1] = a[1]; res[3] = b[1]; }
+        if(a[0] == b[1] && a[2] == b[0]) { res[1] = a[1]; res[3] = b[2]; }
+        if(a[0] == b[2] && a[2] == b[1]) { res[1] = a[1]; res[3] = b[0]; }
+        edge[0] = res[0]; edge[1] = res[2];
+        reverse[0] = res[1]; reverse[1] = res[3];
+    }
+    if(ind == 2)
+        return true;
+    return false;
+}
+
+bool RenderWidget::isNeighbouringByVertex(vec3i a, vec3i b)
 {
     int ind = 0;
     if(a[0] == b[0] || a[0] == b[1] || a[0] == b[2]) {
@@ -120,9 +215,40 @@ bool RenderWidget::isNeighbouring(vec3i a, vec3i b)
     if(a[2] == b[0] || a[2] == b[1] || a[2] == b[2]) {
         ind++;
     }
-    if(ind == 2)
+    if(ind == 1)
         return true;
     return false;
+}
+
+bool RenderWidget::checkCorrectQuad(vec4i q)
+{
+    if(q[0] == q[1] || q[0] == q[2] || q[0] == q[3])
+        return false;
+    if(q[1] == q[2] || q[1] == q[3])
+        return false;
+    if(q[2] == q[3])
+        return false;
+    return true;
+}
+
+void RenderWidget::flip(vec3i t1,
+                        vec3i t2,
+                        vec4i quad,
+                        vec2i edge,
+                        vec2i reverse_edge,
+                        vec3i &r1,
+                        vec3i &r2)
+{
+    qDebug() << "Edge" << edge[0] << edge[1];
+    qDebug() << "Reverse" << reverse_edge[0] << reverse_edge[1];
+    qDebug() << "=====================";
+    r1[0] = edge[0];
+    r1[1] = reverse_edge[1];
+    r1[2] = reverse_edge[2];
+
+    r2[0] = reverse_edge[1];
+    r2[1] = reverse_edge[2];
+    r2[2] = edge[1];
 }
 
 void RenderWidget::mouseMoveEvent(QMouseEvent *event)
